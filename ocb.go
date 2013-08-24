@@ -88,6 +88,9 @@ type OcbCipher struct {
 // security is reduced with lower tag lengths.
 func New(c cipher.Block, taglen uint) (ret OcbCipher) { 
 	ret.b = buildTab(0, c)
+	if taglen == 0 {
+		taglen = 16
+	}
 	ret.Taglen = taglen
 	return
 }
@@ -419,6 +422,14 @@ func decrypt(c []byte, a []byte, nonce [2]uint64, intag []byte, b *ocbtab) ([]by
 // altered --- and returns an empty string and an error if the 
 // authentication tag fails. 
 func (o *OcbCipher) Decrypt(a []byte, c []byte, intag []byte, nonce [2]uint64) (p []byte, err error) {
+	if o.Taglen == 0 {
+		o.Taglen = 16
+	}
+
+	if uint(len(intag)) < o.Taglen {
+		return nil, errors.New("insufficient data for auth tag")
+	}
+
 	p, err = decrypt(c, a, nonce, intag, &(o.b))
 	return
 }
